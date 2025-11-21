@@ -1,0 +1,13 @@
+# depslib dependency file v1.0
+1763735188 source:c:\users\liviu\desktop\asteroids\memorygame\project\resource.rc
+	"resource.h"
+	<windows.h>
+
+1763737128 c:\users\liviu\desktop\asteroids\memorygame\project\resource.h
+
+1763738083 source:c:\users\liviu\desktop\asteroids\memorygame\project\main.cpp
+	<windows.h>
+	<stdio.h>
+	<time.h>
+	"resource.h"
+

@@ -1,0 +1,6 @@
+# depslib dependency file v1.0
+1763735110 source:c:\users\liviu\desktop\asteroids\memorygame\projectdll\main.cpp
+	<windows.h>
+	<stdlib.h>
+	<time.h>
+

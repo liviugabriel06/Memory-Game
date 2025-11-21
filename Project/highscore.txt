@@ -1,0 +1,2 @@
+8Time: 20 sec | Score(moves): 12
+Time: 25 sec | Score(moves): 15
