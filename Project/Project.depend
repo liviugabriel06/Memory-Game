@@ -11,3 +11,15 @@
 	<time.h>
 	"resource.h"
 
+1763735188 source:c:\facultate\anul 2\semestrul 1 ( erasmus+ in lituania - vilnius university  )\programing windows api\memory-game\project\resource.rc
+	"resource.h"
+	<windows.h>
+
+1763741636 c:\facultate\anul 2\semestrul 1 ( erasmus+ in lituania - vilnius university  )\programing windows api\memory-game\project\resource.h
+
+1763742111 source:c:\facultate\anul 2\semestrul 1 ( erasmus+ in lituania - vilnius university  )\programing windows api\memory-game\project\main.cpp
+	<windows.h>
+	<stdio.h>
+	<time.h>
+	"resource.h"
+

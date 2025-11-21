@@ -31,30 +31,146 @@ int totalCards = 16;
 int firstSelection = -1;
 int moves = 0;
 int gameTime = 0;
+char playerName[50] = "RandomUser"; // NOU: Variabila globala pentru nume (valoare default)
 
 // UI Elements
 HWND hBtnPlay, hBtnHelp;
-HWND hBtnEasy, hBtnMed, hBtnHard;
+HWND hBtnEasy, hBtnMed, hBtnHard, hBtnScores, hEditName;
+
+// --- STRUCTURA PENTRU SCORURI ---
+typedef struct
+{
+    char name[50];
+    int difficulty; // 4, 6, sau 10
+    int time;
+    int moves;
+} ScoreEntry;
 
 // --- FUNCTII ---
 
-void SaveScore() {
+void SaveScore()
+{
+    // 1. Citeste numele din caseta de editare.
+    GetWindowText(hEditName, playerName, 50);
+    // Asigura-te ca nu este gol
+    if (strlen(playerName) == 0)
+    {
+        strcpy(playerName, "RandomUser");
+    }
+
+    // 2. Salveaza in fisier (Adauga numele si dificultatea)
     FILE *f = fopen("highscore.txt", "a");
-    if (f) {
-        fprintf(f, "Time: %d sec | Score(moves): %d\n", gameTime, moves);
+    if (f)
+    {
+        // Format: Nume | Dificultate | Timp | Misari
+        fprintf(f, "%s|%d|%d|%d\n", playerName, cols, gameTime, moves);
         fclose(f);
     }
 }
 
+// Functie de comparatie pentru sortare (dupa timp, apoi dupa miscari)
+int CompareScores(const void *a, const void *b)
+{
+    ScoreEntry *sa = (ScoreEntry *)a;
+    ScoreEntry *sb = (ScoreEntry *)b;
+
+    // Prioritate 1: Timpul (Timp mai mic e mai bun)
+    if (sa->time != sb->time)
+    {
+        return sa->time - sb->time;
+    }
+    // Prioritate 2: Miscarile (Miscarile mai putine sunt mai bune)
+    return sa->moves - sb->moves;
+}
+
+void ShowScores(HWND hWnd)
+{
+    ScoreEntry scores[100];
+    int count = 0;
+    FILE *f = fopen("highscore.txt", "r");
+    char line[256];
+
+    if (!f)
+    {
+        MessageBox(hWnd, "No high scores saved yet.", "High Scores", MB_OK | MB_ICONINFORMATION);
+        return;
+    }
+
+    // Citeste scorurile din fisier (Format: Nume|Dificultate|Timp|Misari)
+    while (fgets(line, sizeof(line), f) && count < 100)
+    {
+        // Folosim sscanf pentru a parsa linia
+        if (sscanf(line, "%49[^|]|%d|%d|%d",
+                   scores[count].name,
+                   &scores[count].difficulty,
+                   &scores[count].time,
+                   &scores[count].moves) == 4)
+        {
+            count++;
+        }
+    }
+    fclose(f);
+
+    if (count == 0)
+    {
+        MessageBox(hWnd, "No valid high scores found.", "High Scores", MB_OK | MB_ICONINFORMATION);
+        return;
+    }
+
+    // Sorteaza scorurile (folosind functia CompareScores)
+    qsort(scores, count, sizeof(ScoreEntry), CompareScores);
+
+    // Formateaza textul pentru afisare (Top 5 per Dificultate)
+    char display[4096] = "--- HIGH SCORES (TOP 5) ---\n\n";
+    int topEasy = 0, topMed = 0, topHard = 0;
+
+    for (int i = 0; i < count; i++)
+    {
+        char diff[10];
+        int *topCount = NULL;
+
+        if (scores[i].difficulty == 4)
+        {
+            strcpy(diff, "EASY");
+            topCount = &topEasy;
+        }
+        else if (scores[i].difficulty == 6)
+        {
+            strcpy(diff, "MEDIUM");
+            topCount = &topMed;
+        }
+        else if (scores[i].difficulty == 10)
+        {
+            strcpy(diff, "HARD");
+            topCount = &topHard;
+        }
+        else continue;
+
+        if (*topCount < 5)
+        {
+            char entry[256];
+            sprintf(entry, "%s - %s: Time %d s | Moves %d\n",
+                    diff, scores[i].name, scores[i].time, scores[i].moves);
+            strcat(display, entry);
+            (*topCount)++;
+        }
+    }
+
+    MessageBox(hWnd, display, "Global High Scores", MB_OK | MB_ICONINFORMATION);
+}
+
 // Functie auxiliara pentru a calcula marimea ferestrei
-void ResizeWindow(HWND hWnd) {
-    if (currentState == STATE_MENU || currentState == STATE_DIFFICULTY) {
+void ResizeWindow(HWND hWnd)
+{
+    if (currentState == STATE_MENU || currentState == STATE_DIFFICULTY)
+    {
         // Marime fixa pentru meniu
         RECT rc = {0, 0, 400, 350};
         AdjustWindowRect(&rc, WS_OVERLAPPEDWINDOW, FALSE);
         SetWindowPos(hWnd, NULL, 0, 0, rc.right - rc.left, rc.bottom - rc.top, SWP_NOMOVE | SWP_NOZORDER);
     }
-    else if (currentState == STATE_GAME) {
+    else if (currentState == STATE_GAME)
+    {
         // --- MODIFICARE: Calculam latimea incluzand spatiile (GAPS) ---
         int width = cols * (cellSize + GAP) + GAP;
         int height = rows * (cellSize + GAP) + GAP;
@@ -72,33 +188,53 @@ void ResizeWindow(HWND hWnd) {
     }
 }
 
-void UpdateUI(HWND hWnd) {
+void UpdateUI(HWND hWnd)
+{
     ShowWindow(hBtnPlay, SW_HIDE);
     ShowWindow(hBtnHelp, SW_HIDE);
+    ShowWindow(hBtnScores, SW_HIDE); // NOU
+
     ShowWindow(hBtnEasy, SW_HIDE);
     ShowWindow(hBtnMed, SW_HIDE);
     ShowWindow(hBtnHard, SW_HIDE);
+    ShowWindow(hEditName, SW_HIDE); // NOU: Ascunde caseta de nume
 
-    if (currentState == STATE_MENU) {
+    if (currentState == STATE_MENU)
+    {
         ShowWindow(hBtnPlay, SW_SHOW);
         ShowWindow(hBtnHelp, SW_SHOW);
+        ShowWindow(hBtnScores, SW_SHOW); // NOU
         SetWindowText(hWnd, "Memory Game - Main Menu");
     }
-    else if (currentState == STATE_DIFFICULTY) {
+    else if (currentState == STATE_DIFFICULTY)
+    {
+        // NOU: Afiseaza caseta de nume si butoanele de dificultate
+        ShowWindow(hEditName, SW_SHOW);
+
+        // Re-seteaza textul de prompt in Edit Control, daca nu are deja numele
+        char currentText[50];
+        GetWindowText(hEditName, currentText, 50);
+        if (strlen(currentText) == 0)
+        {
+            SetWindowText(hEditName, "RandomUser");
+        }
+
         ShowWindow(hBtnEasy, SW_SHOW);
         ShowWindow(hBtnMed, SW_SHOW);
         ShowWindow(hBtnHard, SW_SHOW);
         SetWindowText(hWnd, "Choose Difficulty");
     }
-    else if (currentState == STATE_GAME) {
-        SetTimer(hWnd, 1, 1000, NULL);
+    else if (currentState == STATE_GAME)
+    {
+        // Timerul de joc este pornit in StartGame, nu aici
     }
 
     ResizeWindow(hWnd);
     InvalidateRect(hWnd, NULL, TRUE);
 }
 
-void StartGame(HWND hWnd, int r, int c) {
+void StartGame(HWND hWnd, int r, int c)
+{
     rows = r;
     cols = c;
     totalCards = rows * cols;
@@ -112,19 +248,24 @@ void StartGame(HWND hWnd, int r, int c) {
     else cellSize = 55;
 
     // --- LOGICA DE AMESTECARE ---
-    if (pInitBoard) {
+    if (pInitBoard)
+    {
         // Varianta 1: Folosim DLL-ul (Ideal)
         pInitBoard(board, totalCards);
-    } else {
+    }
+    else
+    {
         // Varianta 2: Fallback (Daca DLL lipseste) - AMESTECAM MANUAL AICI
         // Pas A: Umplem ordonat
-        for(int i=0; i<totalCards; i++) {
-             board[i] = (i / 2) + 1; // Perechi 1,1, 2,2...
+        for(int i=0; i<totalCards; i++)
+        {
+            board[i] = (i / 2) + 1; // Perechi 1,1, 2,2...
         }
 
         // Pas B: Amestecam (Shuffle local)
         srand(time(NULL));
-        for (int i = totalCards - 1; i > 0; i--) {
+        for (int i = totalCards - 1; i > 0; i--)
+        {
             int j = rand() % (i + 1);
             int temp = board[i];
             board[i] = board[j];
@@ -146,7 +287,8 @@ void StartGame(HWND hWnd, int r, int c) {
     SetTimer(hWnd, 2, PREVIEW_TIME, NULL);
 }
 
-void LoadImages(HINSTANCE hInst) {
+void LoadImages(HINSTANCE hInst)
+{
     hBmp[0] = LoadBitmap(hInst, MAKEINTRESOURCE(IDB_BACK));
     hBmp[1] = LoadBitmap(hInst, MAKEINTRESOURCE(IDB_IMG1));
     hBmp[2] = LoadBitmap(hInst, MAKEINTRESOURCE(IDB_IMG2));
@@ -154,14 +296,16 @@ void LoadImages(HINSTANCE hInst) {
     hBmp[4] = LoadBitmap(hInst, MAKEINTRESOURCE(IDB_IMG4));
 }
 
-void DrawBoard(HDC hdc) {
+void DrawBoard(HDC hdc)
+{
     if (currentState != STATE_GAME) return;
 
     HDC hMemDC = CreateCompatibleDC(hdc);
     // Setam modul de redimensionare sa fie de calitate (sa nu arate pixelat cand micsoram)
     SetStretchBltMode(hdc, HALFTONE);
 
-    for (int i = 0; i < totalCards; i++) {
+    for (int i = 0; i < totalCards; i++)
+    {
         int r = i / cols;
         int c = i % cols;
 
@@ -171,9 +315,12 @@ void DrawBoard(HDC hdc) {
 
         HBITMAP hToDraw;
 
-        if (state[i] == 0) {
+        if (state[i] == 0)
+        {
             hToDraw = hBmp[0];
-        } else {
+        }
+        else
+        {
             int imgIndex = (board[i] - 1) % 4 + 1;
             hToDraw = hBmp[imgIndex];
         }
@@ -187,9 +334,12 @@ void DrawBoard(HDC hdc) {
     DeleteDC(hMemDC);
 }
 
-LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
-    switch (message) {
-    case WM_CREATE: {
+LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
+{
+    switch (message)
+    {
+    case WM_CREATE:
+    {
         hDll = LoadLibrary("ProjectDLL.dll");
         if (hDll) pInitBoard = (LPFN_INITBOARD)GetProcAddress(hDll, "InitBoard");
 
@@ -198,24 +348,37 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
         // Butoane Meniu
         hBtnPlay = CreateWindow("BUTTON", "PLAY", WS_CHILD | BS_PUSHBUTTON,
                                 130, 80, 120, 40, hWnd, (HMENU)ID_BTN_PLAY, hInst, NULL);
+
+        // --- NOU: Butonul SCORES ---
+        hBtnScores = CreateWindow("BUTTON", "HIGH SCORES", WS_CHILD | BS_PUSHBUTTON,
+                                  130, 140, 120, 40, hWnd, (HMENU)ID_BTN_SCORES, hInst, NULL);
+
         hBtnHelp = CreateWindow("BUTTON", "HOW TO PLAY", WS_CHILD | BS_PUSHBUTTON,
-                                130, 140, 120, 40, hWnd, (HMENU)ID_BTN_HELP, hInst, NULL);
+                                130, 200, 120, 40, hWnd, (HMENU)ID_BTN_HELP, hInst, NULL);
+
+
+        // --- NOU: Caseta de editare pentru nume ---
+        hEditName = CreateWindow("EDIT", "RandomUser", WS_CHILD | WS_VISIBLE | WS_BORDER | ES_AUTOHSCROLL,
+                                 90, 60, 200, 25, hWnd, (HMENU)ID_EDIT_NAME, hInst, NULL);
+        ShowWindow(hEditName, SW_HIDE); // Initial ascunsa
 
         // Butoane Dificultate
         hBtnEasy = CreateWindow("BUTTON", "EASY (4x4)", WS_CHILD | BS_PUSHBUTTON,
-                                130, 60, 120, 30, hWnd, (HMENU)ID_BTN_EASY, hInst, NULL);
+                                130, 110, 120, 30, hWnd, (HMENU)ID_BTN_EASY, hInst, NULL);
         hBtnMed  = CreateWindow("BUTTON", "MEDIUM (6x6)", WS_CHILD | BS_PUSHBUTTON,
-                                130, 110, 120, 30, hWnd, (HMENU)ID_BTN_MED, hInst, NULL);
+                                130, 160, 120, 30, hWnd, (HMENU)ID_BTN_MED, hInst, NULL);
         hBtnHard = CreateWindow("BUTTON", "HARD (10x10)", WS_CHILD | BS_PUSHBUTTON,
-                                130, 160, 120, 30, hWnd, (HMENU)ID_BTN_HARD, hInst, NULL);
+                                130, 210, 120, 30, hWnd, (HMENU)ID_BTN_HARD, hInst, NULL);
 
         UpdateUI(hWnd);
         break;
     }
 
     case WM_TIMER:
-        if (wParam == 1) { // Timer-ul de Joc
-            if (currentState == STATE_GAME) {
+        if (wParam == 1)   // Timer-ul de Joc
+        {
+            if (currentState == STATE_GAME)
+            {
                 gameTime++;
                 char title[100];
                 sprintf(title, "Memory Game | Time: %d s | Moves: %d", gameTime, moves);
@@ -224,7 +387,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
         }
 
         // Timer-ul de Previzualizare (ID=2)
-        else if (wParam == 2) {
+        else if (wParam == 2)
+        {
             KillTimer(hWnd, 2); // Oprim timer-ul de previzualizare
 
             // Setam variabila de stare la FALSE. ACEASTA ESTE LINIA CRUCIALA.
@@ -240,19 +404,23 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
         }
         break;
 
-    case WM_PAINT: {
+    case WM_PAINT:
+    {
         PAINTSTRUCT ps;
         HDC hdc = BeginPaint(hWnd, &ps);
 
-        RECT rc; GetClientRect(hWnd, &rc);
+        RECT rc;
+        GetClientRect(hWnd, &rc);
         HBRUSH hBrush = CreateSolidBrush(RGB(139, 69, 19)); // Fundal Maro
         FillRect(hdc, &rc, hBrush);
         DeleteObject(hBrush);
 
-        if (currentState == STATE_GAME) {
+        if (currentState == STATE_GAME)
+        {
             DrawBoard(hdc);
         }
-        else {
+        else
+        {
             SetBkMode(hdc, TRANSPARENT);
             SetTextColor(hdc, RGB(255, 255, 255));
             if (currentState == STATE_MENU)
@@ -262,28 +430,49 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
         }
 
         EndPaint(hWnd, &ps);
-    } break;
+    }
+    break;
 
     case WM_COMMAND:
-        switch (LOWORD(wParam)) {
-            case ID_BTN_PLAY:
-                currentState = STATE_DIFFICULTY;
-                UpdateUI(hWnd);
-                break;
+        switch (LOWORD(wParam))
+        {
+        case ID_BTN_PLAY:
+            currentState = STATE_DIFFICULTY;
+            UpdateUI(hWnd);
+            break;
 
-            case ID_BTN_HELP:
-                MessageBox(hWnd,
-                    "Click to reveal cards. Find matching pairs.\nGL & HF!",
-                    "How To Play", MB_OK | MB_ICONINFORMATION);
-                break;
+        case ID_BTN_SCORES:
+            ShowScores(hWnd);
+            break;
 
-            case ID_BTN_EASY: StartGame(hWnd, 4, 4); break;
-            case ID_BTN_MED:  StartGame(hWnd, 6, 6); break;
-            case ID_BTN_HARD: StartGame(hWnd, 10, 10); break;
+        case ID_BTN_HELP:
+            MessageBox(hWnd,
+                       "Welcome to Memory Game!\n\n"
+                       "--- Game Rules ---\n"
+                       "1. Preview: The game starts with all cards briefly revealed for 2 seconds. Use this time wisely!\n"
+                       "2. Objective: Click two hidden cards to reveal them. If the cards show the same image, they form a matching pair and remain visible.\n"
+                       "3. Mismatch: If the cards do not match, they will hide again after a short delay.\n"
+                       "4. Victory: The game is won when all card pairs have been successfully found.\n\n"
+                       "--- Scoring ---\n"
+                       " Time: The timer starts after the preview ends and runs until all pairs are found.\n"
+                       " Moves: Measures the number of attempts (pairs of cards clicked).\n"
+                       " High Scores: Best results (based on time, then moves) are saved globally for each difficulty level (4x4, 6x6, 10x10).",
+                       "How To Play & Scoring", MB_OK | MB_ICONINFORMATION);
+            break;
+        case ID_BTN_EASY:
+            StartGame(hWnd, 4, 4);
+            break;
+        case ID_BTN_MED:
+            StartGame(hWnd, 6, 6);
+            break;
+        case ID_BTN_HARD:
+            StartGame(hWnd, 10, 10);
+            break;
         }
         break;
 
-    case WM_LBUTTONDOWN: {
+    case WM_LBUTTONDOWN:
+    {
         // Blocheaza click-urile daca nu suntem in joc SAU daca previzualizarea ruleaza.
         if (currentState != STATE_GAME || previewRunning == TRUE) break;
 
@@ -304,11 +493,14 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
         if (state[idx] != 0) break;
 
         // Logica de joc (restul codului ramane la fel ca inainte)
-        if (firstSelection == -1) {
+        if (firstSelection == -1)
+        {
             state[idx] = 1;
             firstSelection = idx;
             InvalidateRect(hWnd, NULL, FALSE);
-        } else {
+        }
+        else
+        {
             state[idx] = 1;
             InvalidateRect(hWnd, NULL, FALSE);
             UpdateWindow(hWnd);
@@ -322,7 +514,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
             int imgVizuala1 = (board[firstSelection] - 1) % 4;
             int imgVizuala2 = (board[idx] - 1) % 4;
 
-            if (imgVizuala1 == imgVizuala2) {
+            if (imgVizuala1 == imgVizuala2)
+            {
                 // ESTE MATCH!
                 state[firstSelection] = 2;
                 state[idx] = 2;
@@ -332,7 +525,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
                 int finished = 1;
                 for(int i=0; i<totalCards; i++) if(state[i] != 2) finished = 0;
 
-                if(finished) {
+                if(finished)
+                {
                     KillTimer(hWnd, 1);
                     SaveScore();
                     char msg[100];
@@ -343,7 +537,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
                     UpdateUI(hWnd);
                 }
 
-            } else {
+            }
+            else
+            {
                 // NU SE POTRIVESC
                 Sleep(500);
                 state[firstSelection] = 0;
@@ -352,7 +548,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
             }
             firstSelection = -1;
         }
-    } break;
+    }
+    break;
 
     case WM_DESTROY:
         if (hDll) FreeLibrary(hDll);
@@ -366,13 +563,15 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
     return 0;
 }
 
-int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) {
+int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
+{
     hInst = hInstance; // Initializare globala
 
     WNDCLASSEX wcex = {sizeof(WNDCLASSEX), CS_HREDRAW | CS_VREDRAW, WndProc, 0, 0, hInstance,
                        LoadIcon(NULL, IDI_APPLICATION), LoadCursor(NULL, IDC_ARROW),
                        (HBRUSH)GetStockObject(BLACK_BRUSH),
-                       NULL, "MemoryClass", NULL};
+                       NULL, "MemoryClass", NULL
+                      };
 
     RegisterClassEx(&wcex);
     HWND hWnd = CreateWindow("MemoryClass", "Memory Game", WS_OVERLAPPEDWINDOW,
@@ -382,7 +581,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     UpdateWindow(hWnd);
 
     MSG msg;
-    while (GetMessage(&msg, NULL, 0, 0)) {
+    while (GetMessage(&msg, NULL, 0, 0))
+    {
         TranslateMessage(&msg);
         DispatchMessage(&msg);
     }

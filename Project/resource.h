@@ -11,6 +11,8 @@
 #define ID_BTN_EASY 3003
 #define ID_BTN_MED  3004
 #define ID_BTN_HARD 3005
+#define ID_BTN_SCORES 1004
+#define ID_EDIT_NAME 1005
 
 // Imagini
 #define IDB_BACK 2000
