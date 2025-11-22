@@ -563,26 +563,43 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     return 0;
 }
 
-int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
-{
+int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) {
     hInst = hInstance; // Initializare globala
 
     WNDCLASSEX wcex = {sizeof(WNDCLASSEX), CS_HREDRAW | CS_VREDRAW, WndProc, 0, 0, hInstance,
                        LoadIcon(NULL, IDI_APPLICATION), LoadCursor(NULL, IDC_ARROW),
                        (HBRUSH)GetStockObject(BLACK_BRUSH),
-                       NULL, "MemoryClass", NULL
-                      };
+                       NULL, "MemoryClass", NULL};
 
     RegisterClassEx(&wcex);
+
+    // --- NOU: Calculul pentru Centrare ---
+
+    // Dimensiunile initiale ale ferestrei (pentru meniu)
+    int windowWidth = 400;
+    int windowHeight = 350; // Marime ajustata pentru meniu
+
+    // Obține dimensiunile ecranului
+    int screenWidth = GetSystemMetrics(SM_CXSCREEN);
+    int screenHeight = GetSystemMetrics(SM_CYSCREEN);
+
+    // Calculează coordonatele de start (X, Y) pentru centrare
+    int startX = (screenWidth - windowWidth) / 2;
+    int startY = (screenHeight - windowHeight) / 2;
+
+    // --- Crearea Ferestrei Centrate ---
+
     HWND hWnd = CreateWindow("MemoryClass", "Memory Game", WS_OVERLAPPEDWINDOW,
-                             CW_USEDEFAULT, 0, 400, 300, NULL, NULL, hInstance, NULL);
+                             // Folosim startX și startY pentru a poziționa fereastra
+                             startX, startY,
+                             windowWidth, windowHeight,
+                             NULL, NULL, hInstance, NULL);
 
     ShowWindow(hWnd, nCmdShow);
     UpdateWindow(hWnd);
 
     MSG msg;
-    while (GetMessage(&msg, NULL, 0, 0))
-    {
+    while (GetMessage(&msg, NULL, 0, 0)) {
         TranslateMessage(&msg);
         DispatchMessage(&msg);
     }
