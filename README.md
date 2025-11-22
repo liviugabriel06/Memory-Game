@@ -43,4 +43,6 @@ This project is an implementation of the classic **Memory Game (Concentration)**
 
 ## 📈 Score Persistence
 
-Scores are saved in the `highscore.txt` file using a pipe-separated format:
+Scores are saved in the `highscore.txt` file using a pipe-separated format: 
+
+ProPlayer|4|45|12 MemoryKing|6|110|40
