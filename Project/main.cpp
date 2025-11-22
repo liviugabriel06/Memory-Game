@@ -193,6 +193,20 @@ void ShowScores(HWND hWnd)
     MessageBox(hWnd, display, "Global High Scores", MB_OK | MB_ICONINFORMATION);
 }
 
+void ReadPlayerName()
+{
+    // Citeste textul din caseta de editare in variabila globala
+    GetWindowText(hEditName, playerName, 50);
+
+    // Daca numele este gol, seteaza-l la valoarea default
+    if (strlen(playerName) == 0)
+    {
+        strcpy(playerName, "RandomUser");
+    }
+
+}
+
+
 // Functie auxiliara pentru a calcula marimea ferestrei
 void ResizeWindow(HWND hWnd)
 {
@@ -201,30 +215,41 @@ void ResizeWindow(HWND hWnd)
         // Marime fixa pentru meniu
         RECT rc = {0, 0, 400, 350};
         AdjustWindowRect(&rc, WS_OVERLAPPEDWINDOW, FALSE);
-        SetWindowPos(hWnd, NULL, 0, 0, rc.right - rc.left, rc.bottom - rc.top, SWP_NOMOVE | SWP_NOZORDER);
-    }
-    else if (currentState == STATE_GAME)
-    {
-        // Calculam latimea incluzand spatiile (GAPS)
-        int contentWidth = cols * (cellSize + GAP) + GAP;
-        int contentHeight = rows * (cellSize + GAP) + GAP;
 
-        // Adăugăm HEADER_HEIGHT la înălțimea conținutului
-        int newHeight = contentHeight + HEADER_HEIGHT;
-
-        RECT rc = {0, 0, contentWidth, newHeight};
-        AdjustWindowRect(&rc, WS_OVERLAPPEDWINDOW, FALSE);
-
-        // Centram fereastra pe ecran (optional, dar arata mai bine)
+        // Mută fereastra înapoi în centru (folosind logica din WinMain)
         int screenW = GetSystemMetrics(SM_CXSCREEN);
         int screenH = GetSystemMetrics(SM_CYSCREEN);
         int x = (screenW - (rc.right - rc.left)) / 2;
         int y = (screenH - (rc.bottom - rc.top)) / 2;
 
-        SetWindowPos(hWnd, NULL, 0, 0, rc.right - rc.left, rc.bottom - rc.top, SWP_NOMOVE | SWP_NOZORDER);
+        SetWindowPos(hWnd, NULL, x, y, rc.right - rc.left, rc.bottom - rc.top, SWP_NOZORDER);
+    }
+    else if (currentState == STATE_GAME)
+    {
+        // --- Calculăm dimensiunea NOULUI joc ---
+        int contentWidth = cols * (cellSize + GAP) + GAP;
+        int contentHeight = rows * (cellSize + GAP) + GAP;
+        int newHeight = contentHeight + HEADER_HEIGHT;
+
+        RECT rc = {0, 0, contentWidth, newHeight};
+        AdjustWindowRect(&rc, WS_OVERLAPPEDWINDOW, FALSE);
+
+        // Calculează coordonatele de centrare
+        int screenW = GetSystemMetrics(SM_CXSCREEN);
+        int screenH = GetSystemMetrics(SM_CYSCREEN);
+        int x = (screenW - (rc.right - rc.left)) / 2;
+        int y = (screenH - (rc.bottom - rc.top)) / 2;
+
+        // Folosim coordonatele calculate (x, y) și eliminăm SWP_NOMOVE
+        SetWindowPos(hWnd, NULL, x, y, rc.right - rc.left, rc.bottom - rc.top, SWP_NOZORDER);
     }
 }
 
+/*
+==============================
+          GAME UI
+==============================
+*/
 void UpdateUI(HWND hWnd)
 {
     ShowWindow(hBtnPlay, SW_HIDE);
@@ -234,6 +259,7 @@ void UpdateUI(HWND hWnd)
     ShowWindow(hBtnMed, SW_HIDE);
     ShowWindow(hBtnHard, SW_HIDE);
     ShowWindow(hEditName, SW_HIDE);
+    ShowWindow(hBtnPause, SW_HIDE);
 
     if (currentState == STATE_MENU)
     {
@@ -543,7 +569,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                 KillTimer(hWnd, 2);
                 isPaused = FALSE;
 
+                ShowWindow(hBtnPause, SW_HIDE);
                 // Schimba starea la Meniu
+
                 currentState = STATE_MENU;
                 UpdateUI(hWnd);
             }
@@ -598,12 +626,15 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             break;
 
         case ID_BTN_EASY:
+            ReadPlayerName();
             StartGame(hWnd, 4, 4);
             break;
         case ID_BTN_MED:
+            ReadPlayerName();
             StartGame(hWnd, 6, 6);
             break;
         case ID_BTN_HARD:
+            ReadPlayerName();
             StartGame(hWnd, 10, 10);
             break;
         }
