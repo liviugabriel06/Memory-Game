@@ -3,17 +3,32 @@
 #include <time.h>
 #include "resource.h"
 
-// --- CONFIGURARE ---
-#define ORIGINAL_IMG_SIZE 100 // Dimensiunea reala a imaginilor BMP (100x100)
-#define GAP 10                // Spatiul dintre carti (pixeli)
-#define MAX_CARDS 100         // 10x10 maxim
-#define PREVIEW_TIME 1500     // Durata de previzualizare (2000ms = 2 secunde)
+/*
+==============================
+        CONFIGURATION
+==============================
+*/
+#define ORIGINAL_IMG_SIZE 100 // Actual size of images BMP (100x100)
+#define GAP 10                // The space between playing cards (pixels)
+#define MAX_CARDS 100         // 10x10 maximum
+#define PREVIEW_TIME 1500     // Preview duration (2000ms = 2 seconds)
 #define HEADER_HEIGHT 40
+
 // --- STARI ALE JOCULUI ---
+
+/*
+==============================
+         GAME STATUS
+==============================
+*/
 enum GameState { STATE_MENU, STATE_DIFFICULTY, STATE_GAME };
 enum GameState currentState = STATE_MENU;
 
-// --- GLOBALE ---
+/*
+==============================
+      GLOBAL VARIABLES
+==============================
+*/
 typedef void (*LPFN_INITBOARD)(int*, int);
 HMODULE hDll = NULL;
 LPFN_INITBOARD pInitBoard = NULL;
@@ -26,22 +41,34 @@ int state[MAX_CARDS];
 HBITMAP hBmp[5];
 
 
-// --- VARIABILE JOC ---
+/*
+==============================
+       GAME VARIABLES
+==============================
+*/
 int rows = 4, cols = 4;
-int cellSize = 100; // --- MODIFICARE: Variabila, nu constanta (se schimba in fct de dificultate)
+int cellSize = 100;
 int totalCards = 16;
 int firstSelection = -1;
 int moves = 0;
 int gameTime = 0;
-char playerName[50] = "RandomUser"; // NOU: Variabila globala pentru nume (valoare default)
+char playerName[50] = "RandomUser";
 BOOL isPaused = FALSE;
 
-// UI Elements
+/*
+==============================
+         UI ELEMENTS
+==============================
+*/
 HWND hBtnPlay, hBtnHelp;
 HWND hBtnEasy, hBtnMed, hBtnHard, hBtnScores, hEditName;
 HWND hBtnPause;
 
-// --- STRUCTURA PENTRU SCORURI ---
+/*
+==============================
+      SCORING STRUCTURE
+==============================
+*/
 typedef struct
 {
     char name[50];
@@ -50,8 +77,11 @@ typedef struct
     int moves;
 } ScoreEntry;
 
-// --- FUNCTII ---
-
+/*
+==============================
+          FUNCTIONS
+==============================
+*/
 void SaveScore()
 {
     // 1. Citeste numele din caseta de editare.
@@ -175,11 +205,10 @@ void ResizeWindow(HWND hWnd)
     }
     else if (currentState == STATE_GAME)
     {
-        // --- MODIFICARE: Calculam latimea incluzand spatiile (GAPS) ---
+        // Calculam latimea incluzand spatiile (GAPS)
         int contentWidth = cols * (cellSize + GAP) + GAP;
         int contentHeight = rows * (cellSize + GAP) + GAP;
 
-        // --- MODIFICARE CHEIE AICI ---
         // Adăugăm HEADER_HEIGHT la înălțimea conținutului
         int newHeight = contentHeight + HEADER_HEIGHT;
 
@@ -200,18 +229,17 @@ void UpdateUI(HWND hWnd)
 {
     ShowWindow(hBtnPlay, SW_HIDE);
     ShowWindow(hBtnHelp, SW_HIDE);
-    ShowWindow(hBtnScores, SW_HIDE); // NOU
-
+    ShowWindow(hBtnScores, SW_HIDE);
     ShowWindow(hBtnEasy, SW_HIDE);
     ShowWindow(hBtnMed, SW_HIDE);
     ShowWindow(hBtnHard, SW_HIDE);
-    ShowWindow(hEditName, SW_HIDE); // NOU: Ascunde caseta de nume
+    ShowWindow(hEditName, SW_HIDE);
 
     if (currentState == STATE_MENU)
     {
         ShowWindow(hBtnPlay, SW_SHOW);
         ShowWindow(hBtnHelp, SW_SHOW);
-        ShowWindow(hBtnScores, SW_SHOW); // NOU
+        ShowWindow(hBtnScores, SW_SHOW);
         SetWindowText(hWnd, "Memory Game - Main Menu");
     }
     else if (currentState == STATE_DIFFICULTY)
@@ -294,7 +322,7 @@ void StartGame(HWND hWnd, int r, int c)
     currentState = STATE_GAME;
     UpdateUI(hWnd);
 
-    // --- MODIFICARE AICI: Setam variabila de stare la TRUE ---
+    //Setam variabila de stare la TRUE
     previewRunning = TRUE;
 
     // Pornim Timer-ul de Previzualizare (ID=2)
@@ -329,7 +357,7 @@ void DrawBoard(HDC hdc)
         int r = i / cols;
         int c = i % cols;
 
-        // --- MODIFICARE: Calculam pozitia X si Y adaugand GAP-ul ---
+        //Calculam pozitia X si Y adaugand GAP-ul
         int x = GAP + c * (cellSize + GAP);
         int y = startY + r * (cellSize + GAP);
 
@@ -339,7 +367,7 @@ void DrawBoard(HDC hdc)
         HBRUSH hBrush = CreateSolidBrush(RGB(139, 69, 19)); // Maro inchis
         SelectObject(hdc, hBrush);
 
-        // MODIFICARE AICI: Adauga HEADER_HEIGHT
+        //Adauga HEADER_HEIGHT
         Rectangle(hdc, x, y, x + cellSize, y + cellSize);
 
         DeleteObject(hBrush);
@@ -356,7 +384,7 @@ void DrawBoard(HDC hdc)
 
         SelectObject(hMemDC, hToDraw);
 
-        // --- MODIFICARE: Folosim StretchBlt in loc de BitBlt ---
+        //Folosim StretchBlt in loc de BitBlt
         // StretchBlt ia imaginea originala (100x100) si o "indesara" in noua marime (cellSize x cellSize)
         StretchBlt(hdc, x, y, cellSize, cellSize, hMemDC, 0, 0, ORIGINAL_IMG_SIZE, ORIGINAL_IMG_SIZE, SRCCOPY);
     }
@@ -378,20 +406,20 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         hBtnPlay = CreateWindow("BUTTON", "PLAY", WS_CHILD | BS_PUSHBUTTON,
                                 130, 80, 120, 40, hWnd, (HMENU)ID_BTN_PLAY, hInst, NULL);
 
-        // --- NOU: Butonul SCORES ---
+        // Butonul SCORES
         hBtnScores = CreateWindow("BUTTON", "HIGH SCORES", WS_CHILD | BS_PUSHBUTTON,
                                   130, 140, 120, 40, hWnd, (HMENU)ID_BTN_SCORES, hInst, NULL);
 
-        // --- Butonul de "How to play"
+        // Butonul de "How to play"
         hBtnHelp = CreateWindow("BUTTON", "HOW TO PLAY", WS_CHILD | BS_PUSHBUTTON,
                                 130, 200, 120, 40, hWnd, (HMENU)ID_BTN_HELP, hInst, NULL);
 
-        // NOU: Butonul de Pauză. Poziționat undeva pe tabla de joc (dreapta jos)
+        // Butonul de Pauză. Poziționat undeva pe tabla de joc (dreapta jos)
         hBtnPause = CreateWindow("BUTTON", "PAUSE", WS_CHILD | BS_PUSHBUTTON,
                                  10, 5, 80, 30, hWnd, (HMENU)ID_BTN_PAUSE, hInst, NULL);
         ShowWindow(hBtnPause, SW_HIDE);
 
-        // --- NOU: Caseta de editare pentru nume ---
+        // Caseta de editare pentru nume
         hEditName = CreateWindow("EDIT", "RandomUser", WS_CHILD | WS_VISIBLE | WS_BORDER | ES_AUTOHSCROLL,
                                  90, 60, 200, 25, hWnd, (HMENU)ID_EDIT_NAME, hInst, NULL);
         ShowWindow(hEditName, SW_HIDE); // Initial ascunsa
@@ -411,12 +439,13 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     case WM_TIMER:
         if (wParam == 1)   // Timer-ul de Joc
         {
-            if (currentState == STATE_GAME && !isPaused) { // Adauga si verificarea isPaused
+            if (currentState == STATE_GAME && !isPaused)   // Adauga si verificarea isPaused
+            {
                 gameTime++;
 
                 // SetWindowText(hWnd, title) este acum inutil, afisam in header.
 
-                // --- NOU: Fortam redesenarea header-ului ---
+                // Fortam redesenarea header-ului
                 RECT headerRect = {0, 0, GetSystemMetrics(SM_CXSCREEN), HEADER_HEIGHT};
                 InvalidateRect(hWnd, &headerRect, FALSE);
             }
@@ -454,7 +483,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         if (currentState == STATE_GAME)
         {
 
-            // --- NOU: Deseneaza Header-ul (Bandă Separatoare) ---
+            // Deseneaza Header-ul (Bandă Separatoare)
             RECT headerRect = {0, 0, rc.right, HEADER_HEIGHT};
             HBRUSH hHeaderBrush = CreateSolidBrush(RGB(50, 50, 50));
             FillRect(hdc, &headerRect, hHeaderBrush);
@@ -477,7 +506,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
             if (isPaused)
             {
-                // ... (Logica de desenare "GAME PAUSED!") (ramane neschimbata)
                 SetBkMode(hdc, TRANSPARENT);
                 SetTextColor(hdc, RGB(255, 255, 255));
                 SetTextAlign(hdc, TA_CENTER);
@@ -550,7 +578,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                        "How To Play & Scoring", MB_OK | MB_ICONINFORMATION);
             break;
 
-        case ID_BTN_PAUSE: // NOU: Logica Pauza/Resume
+        case ID_BTN_PAUSE: // Logica Pauza/Resume
             if (isPaused)
             {
                 // Cazul 1: RESUME (Porneste jocul)
@@ -687,7 +715,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
     RegisterClassEx(&wcex);
 
-    // --- NOU: Calculul pentru Centrare ---
+    // Calculul pentru Centrare ---
 
     // Dimensiunile initiale ale ferestrei (pentru meniu)
     int windowWidth = 400;
