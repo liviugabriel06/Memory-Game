@@ -13,6 +13,7 @@
 #define ID_BTN_HARD 3005
 #define ID_BTN_SCORES 1004
 #define ID_EDIT_NAME 1005
+#define ID_BTN_PAUSE 1006
 
 // Imagini
 #define IDB_BACK 2000

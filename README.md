@@ -1,51 +1,46 @@
-# Memory Game (WinAPI / C)
+# 🃏 Memory Game (Concentration) - WinAPI
 
-A classic memory matching game developed using the native Windows API (WinAPI) and the C programming language. This project demonstrates core low-level programming skills, including manual window creation, message handling, custom graphics rendering, and dynamic DLL integration.
+## Project Overview
 
----
+This project is an implementation of the classic **Memory Game (Concentration)**, developed in **C** using the native Windows API (WinAPI). It aims to provide a responsive and feature-rich gaming experience, focusing on dynamic board sizing and a comprehensive high-score system.
 
-## ✨ Features
+## ✨ Key Features
 
-* **Custom UI:** The application uses native WinAPI components (not high-level frameworks) for the main window, controls, and rendering.
-* **Difficulty Levels:** Supports three grid sizes to challenge the player:
-    * **Easy:** 4x4 grid (16 cards)
-    * **Medium:** 6x6 grid (36 cards)
-    * **Hard:** 10x10 grid (100 cards)
-* **Dynamic Graphics:** Cards are dynamically resized (`StretchBlt`) and padded based on the selected difficulty to ensure optimal visual fit.
-* **Game State Management:** Implements a state machine to handle Menu, Difficulty Selection, and Active Game phases.
-* **Preview Mode:** Displays all cards for 2 seconds at the start of the game for the classic memory challenge experience.
-* **Timing & Scoring:** Includes a real-time timer and move counter.
-* **High Score System:** Saves the best time and scores to a local file (`highscore.txt`).
-* **Modular Design:** Uses a separate Dynamic Link Library (`ProjectDLL.dll`) to handle the core board initialization and shuffling logic.
+| Category | Feature | Description |
+| :--- | :--- | :--- |
+| **Game Modes** | **Dynamic Difficulty** | Supports three board sizes: **Easy (4x4)**, **Medium (6x6)**, and **Hard (10x10)**, dynamically adjusting card size (`cellSize`) and window dimensions. |
+| **User Experience** | **Game Header** | A dedicated top bar displays live **Time (seconds)**, **Moves**, and the **Player Name** for quick tracking. |
+| **Scoring** | **Persistent High Scores** | Scores (Name, Difficulty, Time, Moves) are saved to a local file (`highscore.txt`). The **Show Scores** feature displays the global Top 5 ranking per difficulty, sorted by the lowest time, then fewest moves. |
+| **Control** | **Preview Mode** | Each game begins with a 1.5-second preview where all cards are face-up, testing the player's short-term memory before the timer starts. |
+| **Control** | **Pause/Resume** | A dedicated button allows players to **pause** and **resume** the game, stopping the timer and interaction. |
+| **Control** | **Escape Key (Exit)** | Pressing **ESC** immediately terminates the current game (or difficulty selection) and returns the player to the main menu. |
+| **Architecture** | **DLL Integration** | The core board shuffling logic is designed to be loaded dynamically from an external **DLL** (`ProjectDLL.dll`), with a fallback shuffle implementation included. |
 
 ---
 
-## 🛠️ Build and Installation
+## 🛠️ Build and Requirements
 
-This project was developed using **Code::Blocks** with the **MinGW** compiler.
+### Requirements
 
-### Prerequisites
+* **Compiler:** A C compiler environment supporting WinAPI (e.g., MinGW/GCC, Visual Studio).
+* **Dependencies:** The standard Windows API header (`windows.h`) and standard C libraries (`stdio.h`, `time.h`).
+* **Resources:** Bitmap files (`IDB_BACK`, `IDB_IMG1`-`IDB_IMG4`) are expected to be included via a resource file (`.rc`).
+* **DLL (Optional but Recommended):** `ProjectDLL.dll` must be present in the executable directory for the main shuffling logic.
 
-* C Compiler (e.g., GCC/MinGW)
-* Windows operating system (WinAPI required)
+### Building the Project
 
-### Steps to Run Locally
+1.  **Compile Resources:** Compile the resource file (`.rc`).
+2.  **Compile Code:** Compile `main.c` linking the resources and required libraries.
+3.  **Ensure DLL is present:** Place the `ProjectDLL.dll` file in the same directory as the resulting executable.
 
-1.  **Clone the Repository:**
-    ```bash
-    git clone [Your-GitHub-Repository-Link]
-    cd memory-game-winapi
-    ```
-2.  **Build the DLL:** Open the `ProjectDLL` project file in Code::Blocks and build it.
-3.  **Build the Main Executable:** Open the main project file (`.cbp`) and build the executable.
-4.  **Copy DLL:** Ensure the generated `ProjectDLL.dll` is copied into the same directory as the main executable (`.exe`).
-5.  **Run:** Execute the `.exe` file.
+### Running the Game
+
+1.  Execute the compiled program. The window will open **centered** on your screen.
+2.  Select **PLAY** to choose a difficulty level. You can enter your **Player Name** in the edit box provided.
+3.  Enjoy the game! Try to match all pairs in the fastest time and fewest moves.
 
 ---
 
-## 📜 Project Structure (Key Files)
+## 📈 Score Persistence
 
-* `main.c`: Main program entry point, handles all window procedures (`WndProc`), game logic, UI interactions, timers, and drawing.
-* `resource.h`, `resource.rc`: Defines all button IDs and loads bitmap resources (images).
-* `ProjectDLL/main.c`: Contains the exported function `InitBoard` for shuffling the cards (using Fisher-Yates algorithm).
-* `highscore.txt`: Persistence file for saving best game results.
+Scores are saved in the `highscore.txt` file using a pipe-separated format:
