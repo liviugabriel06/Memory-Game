@@ -5,21 +5,52 @@
 #define ID_FILE_EXIT 9001
 #define ID_GAME_RESET 9002
 
-// Butoane Meniu
+// --- BUTOANE MENIU & UI (1000 - 3999) ---
+#define ID_BTN_SCORES 1004
+#define ID_EDIT_NAME 1005
+#define ID_BTN_PAUSE 1006
+#define ID_BTN_THEMES 1007
+#define ID_BTN_BG_COLOR 1008
+
+// Butoane Teme (Selectie)
+#define ID_BTN_THEME_FRUITS 1009
+#define ID_BTN_THEME_VEGGIES 1010
+#define ID_BTN_THEME_UNO 1011
+#define ID_BTN_THEME_CARDS 1012
+
 #define ID_BTN_PLAY 3001
 #define ID_BTN_HELP 3002
 #define ID_BTN_EASY 3003
 #define ID_BTN_MED  3004
 #define ID_BTN_HARD 3005
-#define ID_BTN_SCORES 1004
-#define ID_EDIT_NAME 1005
-#define ID_BTN_PAUSE 1006
 
-// Imagini
+// --- IMAGINI (RESURSE BITMAP - NUMERE MARI) ---
+
+// Spate
 #define IDB_BACK 2000
+
+// Set 1: Fructe (2001 - 2004) -> ASTEA MERGEAU DEJA
 #define IDB_IMG1 2001
 #define IDB_IMG2 2002
 #define IDB_IMG3 2003
 #define IDB_IMG4 2004
+
+// Set 2: Legume (6001 - 6004) -> AICI ERA CONFLICTUL (3001)
+#define IDB_VEG1 6001
+#define IDB_VEG2 6002
+#define IDB_VEG3 6003
+#define IDB_VEG4 6004
+
+// Set 3: UNO (7001 - 7004)
+#define IDB_UNO1 7001
+#define IDB_UNO2 7002
+#define IDB_UNO3 7003
+#define IDB_UNO4 7004
+
+// Set 4: Carti de Joc (8001 - 8004)
+#define IDB_CARD1 8001
+#define IDB_CARD2 8002
+#define IDB_CARD3 8003
+#define IDB_CARD4 8004
 
 #endif

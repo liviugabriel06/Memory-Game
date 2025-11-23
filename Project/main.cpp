@@ -13,6 +13,7 @@
 #define MAX_CARDS 100         // 10x10 maximum
 #define PREVIEW_TIME 1500     // Preview duration (2000ms = 2 seconds)
 #define HEADER_HEIGHT 40
+#define NUM_BACKGROUND_COLORS 20 // 20 de culori
 
 // --- STARI ALE JOCULUI ---
 
@@ -21,7 +22,7 @@
          GAME STATUS
 ==============================
 */
-enum GameState { STATE_MENU, STATE_DIFFICULTY, STATE_GAME };
+enum GameState { STATE_MENU, STATE_DIFFICULTY, STATE_GAME, STATE_THEMES};
 enum GameState currentState = STATE_MENU;
 
 /*
@@ -40,7 +41,6 @@ int board[MAX_CARDS];
 int state[MAX_CARDS];
 HBITMAP hBmp[5];
 
-
 /*
 ==============================
        GAME VARIABLES
@@ -54,15 +54,55 @@ int moves = 0;
 int gameTime = 0;
 char playerName[50] = "RandomUser";
 BOOL isPaused = FALSE;
+// --- VARIABILE CULOARE & TEMA ---
+#define NUM_BACKGROUND_COLORS 20 // NOU: 20 de culori
+
+// Tabloul cu 20 de culori (folosind coduri RGB)
+COLORREF backgroundColors[NUM_BACKGROUND_COLORS] =
+{
+    // 1. Culori Neutre și Pământii
+    RGB(139, 69, 19),   // Maro (Original)
+    RGB(105, 105, 105), // Gri Închis (Dim Gray)
+    RGB(176, 196, 222), // Albastru-Gri Deschis (Light Steel Blue)
+    RGB(205, 133, 63),  // Maro Auriu (Peru)
+    RGB(245, 245, 220), // Bej Deschis (Beige)
+
+    // 2. Culori Reci (Verde, Albastru)
+    RGB(34, 139, 34),   // Verde Padure (Forest Green)
+    RGB(70, 130, 180),  // Albastru Otel (Steel Blue)
+    RGB(0, 191, 255),   // Albastru Azuriu (Deep Sky Blue)
+    RGB(100, 149, 237), // Albastru Porumbel (Cornflower Blue)
+    RGB(60, 179, 113),  // Verde Mediu (Medium Sea Green)
+
+    // 3. Culori Calde (Roșu, Portocaliu, Galben)
+    RGB(255, 69, 0),    // Roșu-Portocaliu (Orange Red)
+    RGB(255, 140, 0),   // Portocaliu Închis (Dark Orange)
+    RGB(255, 255, 0),   // Galben Pur (Yellow)
+    RGB(255, 215, 0),   // Auriu (Gold)
+    RGB(255, 99, 71),   // Roșu Tomată (Tomato)
+
+    // 4. Culori Vii și Întunecate (Mov, Magenta)
+    RGB(128, 0, 128),   // Mov Închis (Purple)
+    RGB(255, 0, 255),   // Magenta (Fuchsia)
+    RGB(218, 112, 214), // Mov Lavandă (Orchid)
+    RGB(75, 0, 130),    // Indigo
+    RGB(0, 0, 139)      // Albastru Închis (Dark Blue)
+};
+
+int currentColorIndex = 0; // Indexul culorii curente in array
+COLORREF currentBgColor = RGB(139, 69, 19); // Culoarea efectiva folosita in WM_PAINT
+int currentThemeID = ID_BTN_THEME_FRUITS;   // NOU: Tema default
 
 /*
 ==============================
          UI ELEMENTS
 ==============================
 */
-HWND hBtnPlay, hBtnHelp;
+HWND hBtnPlay, hBtnHelp, hBtnPause;
 HWND hBtnEasy, hBtnMed, hBtnHard, hBtnScores, hEditName;
-HWND hBtnPause;
+HWND hBtnThemes, hBtnBgColor;
+HWND hBtnThemeFruits, hBtnThemeVeggies, hBtnThemeUNO, hBtnThemeCards;
+
 
 /*
 ==============================
@@ -255,17 +295,24 @@ void UpdateUI(HWND hWnd)
     ShowWindow(hBtnPlay, SW_HIDE);
     ShowWindow(hBtnHelp, SW_HIDE);
     ShowWindow(hBtnScores, SW_HIDE);
+    ShowWindow(hBtnThemes, SW_HIDE);
     ShowWindow(hBtnEasy, SW_HIDE);
     ShowWindow(hBtnMed, SW_HIDE);
     ShowWindow(hBtnHard, SW_HIDE);
     ShowWindow(hEditName, SW_HIDE);
     ShowWindow(hBtnPause, SW_HIDE);
+    ShowWindow(hBtnBgColor, SW_HIDE);
+    ShowWindow(hBtnThemeFruits, SW_HIDE);
+    ShowWindow(hBtnThemeVeggies, SW_HIDE);
+    ShowWindow(hBtnThemeUNO, SW_HIDE);
+    ShowWindow(hBtnThemeCards, SW_HIDE);
 
     if (currentState == STATE_MENU)
     {
         ShowWindow(hBtnPlay, SW_SHOW);
         ShowWindow(hBtnHelp, SW_SHOW);
         ShowWindow(hBtnScores, SW_SHOW);
+        ShowWindow(hBtnThemes, SW_SHOW);
         SetWindowText(hWnd, "Memory Game - Main Menu");
     }
     else if (currentState == STATE_DIFFICULTY)
@@ -285,6 +332,15 @@ void UpdateUI(HWND hWnd)
         ShowWindow(hBtnMed, SW_SHOW);
         ShowWindow(hBtnHard, SW_SHOW);
         SetWindowText(hWnd, "Choose Difficulty");
+    }
+    else if (currentState == STATE_THEMES)
+    {
+        ShowWindow(hBtnBgColor, SW_SHOW);
+        ShowWindow(hBtnThemeFruits, SW_SHOW);
+        ShowWindow(hBtnThemeVeggies, SW_SHOW);
+        ShowWindow(hBtnThemeUNO, SW_SHOW);
+        ShowWindow(hBtnThemeCards, SW_SHOW);
+        SetWindowText(hWnd, "Memory Game - Themes");
     }
     else if (currentState == STATE_GAME)
     {
@@ -357,11 +413,72 @@ void StartGame(HWND hWnd, int r, int c)
 
 void LoadImages(HINSTANCE hInst)
 {
+    // 1. Incarcam Spatele
+    if (hBmp[0]) DeleteObject(hBmp[0]);
     hBmp[0] = LoadBitmap(hInst, MAKEINTRESOURCE(IDB_BACK));
-    hBmp[1] = LoadBitmap(hInst, MAKEINTRESOURCE(IDB_IMG1));
-    hBmp[2] = LoadBitmap(hInst, MAKEINTRESOURCE(IDB_IMG2));
-    hBmp[3] = LoadBitmap(hInst, MAKEINTRESOURCE(IDB_IMG3));
-    hBmp[4] = LoadBitmap(hInst, MAKEINTRESOURCE(IDB_IMG4));
+
+    if (hBmp[0] == NULL)
+    {
+        MessageBox(NULL, "Nu gasesc imaginea SPATE (IDB_BACK)!", "Eroare Resurse", MB_OK | MB_ICONERROR);
+    }
+
+    int id1, id2, id3, id4;
+
+    // 2. Selectam ID-urile
+    switch (currentThemeID)
+    {
+    case ID_BTN_THEME_VEGGIES:
+        id1 = IDB_VEG1;
+        id2 = IDB_VEG2;
+        id3 = IDB_VEG3;
+        id4 = IDB_VEG4;
+        break;
+    case ID_BTN_THEME_UNO:
+        id1 = IDB_UNO1;
+        id2 = IDB_UNO2;
+        id3 = IDB_UNO3;
+        id4 = IDB_UNO4;
+        break;
+    case ID_BTN_THEME_CARDS:
+        id1 = IDB_CARD1;
+        id2 = IDB_CARD2;
+        id3 = IDB_CARD3;
+        id4 = IDB_CARD4;
+        break;
+    case ID_BTN_THEME_FRUITS:
+    default:
+        id1 = IDB_IMG1;
+        id2 = IDB_IMG2;
+        id3 = IDB_IMG3;
+        id4 = IDB_IMG4;
+        break;
+    }
+
+    // 3. Curatam memoria veche
+    if (hBmp[1]) DeleteObject(hBmp[1]);
+    if (hBmp[2]) DeleteObject(hBmp[2]);
+    if (hBmp[3]) DeleteObject(hBmp[3]);
+    if (hBmp[4]) DeleteObject(hBmp[4]);
+
+    // 4. Incarcam noile imagini
+    hBmp[1] = LoadBitmap(hInst, MAKEINTRESOURCE(id1));
+    hBmp[2] = LoadBitmap(hInst, MAKEINTRESOURCE(id2));
+    hBmp[3] = LoadBitmap(hInst, MAKEINTRESOURCE(id3));
+    hBmp[4] = LoadBitmap(hInst, MAKEINTRESOURCE(id4));
+
+    // --- DEBUG: Verificam daca s-au incarcat ---
+    if (hBmp[1] == NULL)
+    {
+        char msg[100];
+        sprintf(msg, "Nu pot incarca imaginea 1 pentru tema curenta!\nID Resursa: %d", id1);
+        MessageBox(NULL, msg, "Eroare Lipsa Fisier BMP", MB_OK | MB_ICONERROR);
+
+        // FALLBACK: Incarcam imaginile default (Fructe) ca sa mearga jocul
+        hBmp[1] = LoadBitmap(hInst, MAKEINTRESOURCE(IDB_IMG1));
+        hBmp[2] = LoadBitmap(hInst, MAKEINTRESOURCE(IDB_IMG2));
+        hBmp[3] = LoadBitmap(hInst, MAKEINTRESOURCE(IDB_IMG3));
+        hBmp[4] = LoadBitmap(hInst, MAKEINTRESOURCE(IDB_IMG4));
+    }
 }
 
 void DrawBoard(HDC hdc)
@@ -390,7 +507,7 @@ void DrawBoard(HDC hdc)
         HBITMAP hToDraw;
 
         // 1. Deseneaza dreptunghiul de baza
-        HBRUSH hBrush = CreateSolidBrush(RGB(139, 69, 19)); // Maro inchis
+        HBRUSH hBrush = CreateSolidBrush(currentBgColor);
         SelectObject(hdc, hBrush);
 
         //Adauga HEADER_HEIGHT
@@ -436,9 +553,33 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         hBtnScores = CreateWindow("BUTTON", "HIGH SCORES", WS_CHILD | BS_PUSHBUTTON,
                                   130, 140, 120, 40, hWnd, (HMENU)ID_BTN_SCORES, hInst, NULL);
 
+        // Butonul Themes
+        hBtnThemes = CreateWindow("BUTTON", "THEMES", WS_CHILD | BS_PUSHBUTTON,
+                                  130, 200, 120, 40, hWnd, (HMENU)ID_BTN_THEMES, hInst, NULL);
+
         // Butonul de "How to play"
         hBtnHelp = CreateWindow("BUTTON", "HOW TO PLAY", WS_CHILD | BS_PUSHBUTTON,
-                                130, 200, 120, 40, hWnd, (HMENU)ID_BTN_HELP, hInst, NULL);
+                                130, 260, 120, 40, hWnd, (HMENU)ID_BTN_HELP, hInst, NULL);
+
+        // Butonul Change Background
+        hBtnBgColor = CreateWindow("BUTTON", "CHANGE BACKGROUND", WS_CHILD | BS_PUSHBUTTON,
+                                   90, 80, 200, 30, hWnd, (HMENU)ID_BTN_BG_COLOR, hInst, NULL);
+
+        // Butonul Fruits(default)
+        hBtnThemeFruits = CreateWindow("BUTTON", "FRUITS (Default)", WS_CHILD | BS_PUSHBUTTON,
+                                       90, 150, 200, 30, hWnd, (HMENU)ID_BTN_THEME_FRUITS, hInst, NULL);
+
+        // Butonul Vegetables
+        hBtnThemeVeggies = CreateWindow("BUTTON", "VEGETABLES", WS_CHILD | BS_PUSHBUTTON,
+                                        90, 190, 200, 30, hWnd, (HMENU)ID_BTN_THEME_VEGGIES, hInst, NULL);
+
+        // Butonul Uno Cards
+        hBtnThemeUNO = CreateWindow("BUTTON", "UNO CARDS", WS_CHILD | BS_PUSHBUTTON,
+                                    90, 230, 200, 30, hWnd, (HMENU)ID_BTN_THEME_UNO, hInst, NULL);
+
+        // Butonul Playing Cards
+        hBtnThemeCards = CreateWindow("BUTTON", "PLAYING CARDS", WS_CHILD | BS_PUSHBUTTON,
+                                      90, 270, 200, 30, hWnd, (HMENU)ID_BTN_THEME_CARDS, hInst, NULL);
 
         // Butonul de Pauză. Poziționat undeva pe tabla de joc (dreapta jos)
         hBtnPause = CreateWindow("BUTTON", "PAUSE", WS_CHILD | BS_PUSHBUTTON,
@@ -459,10 +600,11 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                                 130, 210, 120, 30, hWnd, (HMENU)ID_BTN_HARD, hInst, NULL);
 
         UpdateUI(hWnd);
-        break;
     }
+    break;
 
     case WM_TIMER:
+    {
         if (wParam == 1)   // Timer-ul de Joc
         {
             if (currentState == STATE_GAME && !isPaused)   // Adauga si verificarea isPaused
@@ -493,7 +635,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
             InvalidateRect(hWnd, NULL, TRUE); // Redesenam ecranul
         }
-        break;
+    }
+    break;
 
     case WM_PAINT:
     {
@@ -502,7 +645,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
         RECT rc;
         GetClientRect(hWnd, &rc);
-        HBRUSH hBrush = CreateSolidBrush(RGB(139, 69, 19)); // Fundal Maro
+        HBRUSH hBrush = CreateSolidBrush(currentBgColor);
         FillRect(hdc, &rc, hBrush);
         DeleteObject(hBrush);
 
@@ -560,9 +703,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     break;
 
     case WM_KEYDOWN:
+    {
         if (wParam == VK_ESCAPE)   // Verifica daca tasta apasata este ESC
         {
-            if (currentState == STATE_GAME || currentState == STATE_DIFFICULTY)
+            if (currentState == STATE_GAME || currentState == STATE_DIFFICULTY || currentState == STATE_THEMES)
             {
                 // Curatenie
                 KillTimer(hWnd, 1);
@@ -570,16 +714,17 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                 isPaused = FALSE;
 
                 ShowWindow(hBtnPause, SW_HIDE);
-                // Schimba starea la Meniu
 
+                // Schimba starea la Meniu
                 currentState = STATE_MENU;
                 UpdateUI(hWnd);
             }
         }
-        break;
-
+    }
+    break;
 
     case WM_COMMAND:
+    {
         switch (LOWORD(wParam))
         {
         case ID_BTN_PLAY:
@@ -604,6 +749,34 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                        " Moves: Measures the number of attempts (pairs of cards clicked).\n"
                        " High Scores: Best results (based on time, then moves) are saved globally for each difficulty level (4x4, 6x6, 10x10).",
                        "How To Play & Scoring", MB_OK | MB_ICONINFORMATION);
+            break;
+
+        case ID_BTN_THEMES:
+            currentState = STATE_THEMES;
+            UpdateUI(hWnd);
+            break;
+
+        case ID_BTN_BG_COLOR:
+            // 1. Trecem la urmatorul index (0 -> 1 -> ... -> 19 -> 0)
+            currentColorIndex = (currentColorIndex + 1) % NUM_BACKGROUND_COLORS;
+
+            // 2. IMPORTANT: Actualizam variabila globala de culoare cu noua valoare din tablou!
+            currentBgColor = backgroundColors[currentColorIndex];
+
+            // 3. Fortam redesenarea
+            InvalidateRect(hWnd, NULL, TRUE);
+            break;
+
+        case ID_BTN_THEME_FRUITS:
+        case ID_BTN_THEME_VEGGIES:
+        case ID_BTN_THEME_UNO:
+        case ID_BTN_THEME_CARDS:
+            // Setam tema
+            currentThemeID = LOWORD(wParam);
+            // Reincarcam imaginile
+            LoadImages(hInst);
+            // Confirmare
+            MessageBox(hWnd, "Theme changed successfully!", "Settings", MB_OK);
             break;
 
         case ID_BTN_PAUSE: // Logica Pauza/Resume
@@ -638,7 +811,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             StartGame(hWnd, 10, 10);
             break;
         }
-        break;
+    }
+    break;
 
     case WM_LBUTTONDOWN:
     {

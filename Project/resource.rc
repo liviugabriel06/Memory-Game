@@ -1,6 +1,10 @@
 #include "resource.h"
 #include <windows.h>
 
+// SPATELE CARTII
+IDB_BACK BITMAP "backCard.bmp"
+
+// MENIUL
 IDR_MYMENU MENU
 BEGIN
     POPUP "&Game"
@@ -10,10 +14,26 @@ BEGIN
     END
 END
 
-// Încărcarea imaginilor BMP
-// Sintaxa: ID_NUME BITMAP "calea/fisier.bmp"
-IDB_BACK BITMAP "images/backCard.bmp"
-IDB_IMG1 BITMAP "images/img1.bmp"
-IDB_IMG2 BITMAP "images/img2.bmp"
-IDB_IMG3 BITMAP "images/img3.bmp"
-IDB_IMG4 BITMAP "images/img4.bmp"
+// --- SET 1: FRUCTE ---
+IDB_IMG1 BITMAP "cherry.bmp"
+IDB_IMG2 BITMAP "banana.bmp"
+IDB_IMG3 BITMAP "apple.bmp"
+IDB_IMG4 BITMAP "melon_slice.bmp"
+
+// --- SET 2: LEGUME ---
+IDB_VEG1 BITMAP "carrot.bmp"
+IDB_VEG2 BITMAP "tomato.bmp"
+IDB_VEG3 BITMAP "red_onion.bmp"
+IDB_VEG4 BITMAP "potato.bmp"
+
+// --- SET 3: UNO ---
+IDB_UNO1 BITMAP "Blue_7.bmp"
+IDB_UNO2 BITMAP "Green_7.bmp"
+IDB_UNO3 BITMAP "Red_7.bmp"
+IDB_UNO4 BITMAP "Yellow_7.bmp"
+
+// --- SET 4: CARTI JOC ---
+IDB_CARD1 BITMAP "RedAce.bmp"
+IDB_CARD2 BITMAP "BlackAce.bmp"
+IDB_CARD3 BITMAP "BlueAce.bmp"
+IDB_CARD4 BITMAP "YellowAce.bmp"

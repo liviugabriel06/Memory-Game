@@ -2,3 +2,12 @@
 Time: 25 sec | Score(moves): 15
 Liviu|4|16|11
 RandomUser|4|30|16
+RandomUserMarcel|4|25|17
+Leo|4|8|10
+Leo|4|11|12
+Leo|4|9|11
+Leo|4|8|11
+Leo|4|8|10
+Leo|6|44|35
+Leo|10|86|144
+Leo|10|121|99
