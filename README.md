@@ -46,14 +46,3 @@ This project was developed using **Code::Blocks** with the **MinGW** compiler.
 * MinGW/GCC Compiler.
 * **Important:** All image assets must be **24-bit Bitmaps (.bmp)**.
 
-### Folder Structure
-To ensure correct compilation and resource loading, the project uses a flat structure for assets:
-
-```text
-/Project
-    ├── main.c              # Main source code
-    ├── resource.rc         # Resource script
-    ├── resource.h          # Header for IDs
-    ├── ProjectDLL.dll      # Compiled Logic Library
-    ├── highscore.txt       # Score storage
-    └── *.bmp               # All image assets (cherry.bmp, carrot.bmp, etc.) MUST be here
