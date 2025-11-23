@@ -1,48 +1,59 @@
-# 🃏 Memory Game (Concentration) - WinAPI
+# 🃏 Memory Game (WinAPI Implementation)
 
-## Project Overview
+## 📘 Project Overview
 
-This project is an implementation of the classic **Memory Game (Concentration)**, developed in **C** using the native Windows API (WinAPI). It aims to provide a responsive and feature-rich gaming experience, focusing on dynamic board sizing and a comprehensive high-score system.
+This is a robust implementation of the classic **Memory / Concentration** game, developed entirely in **C** using the native **Windows API (WinAPI)**.
+
+The project demonstrates advanced low-level programming concepts, including manual memory management, dynamic resource loading, DLL integration for game logic, and a custom-built UI state machine. It features a fully responsive design with selectable themes, dynamic difficulty, and persistent high scores.
 
 ## ✨ Key Features
 
-| Category | Feature | Description |
-| :--- | :--- | :--- |
-| **Game Modes** | **Dynamic Difficulty** | Supports three board sizes: **Easy (4x4)**, **Medium (6x6)**, and **Hard (10x10)**, dynamically adjusting card size (`cellSize`) and window dimensions. |
-| **User Experience** | **Game Header** | A dedicated top bar displays live **Time (seconds)**, **Moves**, and the **Player Name** for quick tracking. |
-| **Scoring** | **Persistent High Scores** | Scores (Name, Difficulty, Time, Moves) are saved to a local file (`highscore.txt`). The **Show Scores** feature displays the global Top 5 ranking per difficulty, sorted by the lowest time, then fewest moves. |
-| **Control** | **Preview Mode** | Each game begins with a 1.5-second preview where all cards are face-up, testing the player's short-term memory before the timer starts. |
-| **Control** | **Pause/Resume** | A dedicated button allows players to **pause** and **resume** the game, stopping the timer and interaction. |
-| **Control** | **Escape Key (Exit)** | Pressing **ESC** immediately terminates the current game (or difficulty selection) and returns the player to the main menu. |
-| **Architecture** | **DLL Integration** | The core board shuffling logic is designed to be loaded dynamically from an external **DLL** (`ProjectDLL.dll`), with a fallback shuffle implementation included. |
+### 🎮 Core Gameplay
+* **Dynamic Difficulty:** Three grid sizes to choose from:
+    * **Easy:** 4x4 (16 cards)
+    * **Medium:** 6x6 (36 cards)
+    * **Hard:** 10x10 (100 cards)
+* **Preview Mode:** A 1.5-second "peek" at all cards before the game starts to test short-term memory.
+* **Game Header:** A custom top bar displaying real-time **Time**, **Moves**, and the current **Player Name**.
+* **Pause System:** Full Pause/Resume functionality that freezes the timer and locks the board interaction.
+
+### 🎨 Customization & Themes
+* **Card Themes:** Players can switch between 4 distinct card sets via the "Themes" menu:
+    * 🍎 **Fruits** (Default)
+    * 🥕 **Vegetables**
+    * 🃏 **UNO Cards**
+    * ♠️ **Classic Playing Cards**
+* **Background Color:** A "Change Background" button cycles through **20 different colors**, ranging from classic felt green/brown to vibrant modern hues.
+
+### 🏆 Scoring & Persistence
+* **High Score System:** Tracks the best performances based on Time (primary) and Moves (secondary).
+* **Local Persistence:** Scores are saved to `highscore.txt` and loaded dynamically to display a **Top 5 Leaderboard** for each difficulty level.
+* **Player Identity:** Supports custom player names input before starting a match.
+
+### ⚙️ Technical Architecture
+* **DLL Integration:** The card shuffling algorithm is encapsulated in a separate Dynamic Link Library (`ProjectDLL.dll`) loaded at runtime.
+* **Resource Management:** Uses a `.rc` resource script to manage bitmaps and menus. Supports dynamic switching of bitmap resources at runtime based on the selected theme.
+* **Window Management:** The application window automatically centers itself on the screen and resizes precisely to fit the selected grid size + header.
 
 ---
 
-## 🛠️ Build and Requirements
+## 🛠️ Build & Installation
 
-### Requirements
+This project was developed using **Code::Blocks** with the **MinGW** compiler.
 
-* **Compiler:** A C compiler environment supporting WinAPI (e.g., MinGW/GCC, Visual Studio).
-* **Dependencies:** The standard Windows API header (`windows.h`) and standard C libraries (`stdio.h`, `time.h`).
-* **Resources:** Bitmap files (`IDB_BACK`, `IDB_IMG1`-`IDB_IMG4`) are expected to be included via a resource file (`.rc`).
-* **DLL (Optional but Recommended):** `ProjectDLL.dll` must be present in the executable directory for the main shuffling logic.
+### Prerequisites
+* Windows OS (Required for WinAPI).
+* MinGW/GCC Compiler.
+* **Important:** All image assets must be **24-bit Bitmaps (.bmp)**.
 
-### Building the Project
+### Folder Structure
+To ensure correct compilation and resource loading, the project uses a flat structure for assets:
 
-1.  **Compile Resources:** Compile the resource file (`.rc`).
-2.  **Compile Code:** Compile `main.c` linking the resources and required libraries.
-3.  **Ensure DLL is present:** Place the `ProjectDLL.dll` file in the same directory as the resulting executable.
-
-### Running the Game
-
-1.  Execute the compiled program. The window will open **centered** on your screen.
-2.  Select **PLAY** to choose a difficulty level. You can enter your **Player Name** in the edit box provided.
-3.  Enjoy the game! Try to match all pairs in the fastest time and fewest moves.
-
----
-
-## 📈 Score Persistence
-
-Scores are saved in the `highscore.txt` file using a pipe-separated format: 
-
-ProPlayer|4|45|12 MemoryKing|6|110|40
+```text
+/Project
+    ├── main.c              # Main source code
+    ├── resource.rc         # Resource script
+    ├── resource.h          # Header for IDs
+    ├── ProjectDLL.dll      # Compiled Logic Library
+    ├── highscore.txt       # Score storage
+    └── *.bmp               # All image assets (cherry.bmp, carrot.bmp, etc.) MUST be here
