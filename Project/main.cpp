@@ -765,6 +765,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
             // 3. Fortam redesenarea
             InvalidateRect(hWnd, NULL, TRUE);
+            SetFocus(hWnd);
             break;
 
         case ID_BTN_THEME_FRUITS:
@@ -777,6 +778,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             LoadImages(hInst);
             // Confirmare
             MessageBox(hWnd, "Theme changed successfully!", "Settings", MB_OK);
+            SetFocus(hWnd);
             break;
 
         case ID_BTN_PAUSE: // Logica Pauza/Resume

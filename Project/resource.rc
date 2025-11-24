@@ -15,25 +15,25 @@ BEGIN
 END
 
 // --- SET 1: FRUCTE ---
-IDB_IMG1 BITMAP "cherry.bmp"
-IDB_IMG2 BITMAP "banana.bmp"
-IDB_IMG3 BITMAP "apple.bmp"
-IDB_IMG4 BITMAP "melon_slice.bmp"
+IDB_IMG1 BITMAP "images/fruits/cherry.bmp"
+IDB_IMG2 BITMAP "images/fruits/banana.bmp"
+IDB_IMG3 BITMAP "images/fruits/apple.bmp"
+IDB_IMG4 BITMAP "images/fruits/melon_slice.bmp"
 
 // --- SET 2: LEGUME ---
-IDB_VEG1 BITMAP "carrot.bmp"
-IDB_VEG2 BITMAP "tomato.bmp"
-IDB_VEG3 BITMAP "red_onion.bmp"
-IDB_VEG4 BITMAP "potato.bmp"
+IDB_VEG1 BITMAP "images/vegetables/carrot.bmp"
+IDB_VEG2 BITMAP "images/vegetables/tomato.bmp"
+IDB_VEG3 BITMAP "images/vegetables/red_onion.bmp"
+IDB_VEG4 BITMAP "images/vegetables/potato.bmp"
 
 // --- SET 3: UNO ---
-IDB_UNO1 BITMAP "Blue_7.bmp"
-IDB_UNO2 BITMAP "Green_7.bmp"
-IDB_UNO3 BITMAP "Red_7.bmp"
-IDB_UNO4 BITMAP "Yellow_7.bmp"
+IDB_UNO1 BITMAP "images/uno_cards/Blue_7.bmp"
+IDB_UNO2 BITMAP "images/uno_cards/Green_7.bmp"
+IDB_UNO3 BITMAP "images/uno_cards/Red_7.bmp"
+IDB_UNO4 BITMAP "images/uno_cards/Yellow_7.bmp"
 
 // --- SET 4: CARTI JOC ---
-IDB_CARD1 BITMAP "RedAce.bmp"
-IDB_CARD2 BITMAP "BlackAce.bmp"
-IDB_CARD3 BITMAP "BlueAce.bmp"
-IDB_CARD4 BITMAP "YellowAce.bmp"
+IDB_CARD1 BITMAP "images/playing_cards/RedAce.bmp"
+IDB_CARD2 BITMAP "images/playing_cards/BlackAce.bmp"
+IDB_CARD3 BITMAP "images/playing_cards/BlueAce.bmp"
+IDB_CARD4 BITMAP "images/playing_cards/YellowAce.bmp"
