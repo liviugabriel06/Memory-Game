@@ -14,6 +14,7 @@
 #define PREVIEW_TIME 1500     // Preview duration (2000ms = 2 seconds)
 #define HEADER_HEIGHT 40
 #define NUM_BACKGROUND_COLORS 20 // 20 de culori
+#define TIMER_MISMATCH_ID 3
 
 // --- STARI ALE JOCULUI ---
 
@@ -40,6 +41,7 @@ BOOL previewRunning = FALSE;
 int board[MAX_CARDS];
 int state[MAX_CARDS];
 HBITMAP hBmp[5];
+BOOL isInputBlocked = FALSE;
 
 /*
 ==============================
@@ -635,6 +637,20 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
             InvalidateRect(hWnd, NULL, TRUE); // Redesenam ecranul
         }
+        else if (wParam == TIMER_MISMATCH_ID)
+        {
+            KillTimer(hWnd, TIMER_MISMATCH_ID); // Oprim timer-ul
+
+            // Ascundem toate cartile care sunt temporar vizibile (state == 1)
+            for(int i=0; i<totalCards; i++) {
+                if(state[i] == 1) {
+                    state[i] = 0; // Le întoarcem cu fața în jos
+                }
+            }
+
+            isInputBlocked = FALSE; // DEBLOCĂM input-ul
+            InvalidateRect(hWnd, NULL, FALSE); // Redesenăm tabla
+        }
     }
     break;
 
@@ -818,55 +834,53 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
     case WM_LBUTTONDOWN:
     {
-        // Blocheaza click-urile daca nu suntem in joc SAU daca previzualizarea ruleaza SAU daca este PAUZA.
-        if (currentState != STATE_GAME || previewRunning == TRUE || isPaused == TRUE) break;
+        // MODIFICARE: Adaugam 'isInputBlocked == TRUE' la conditia de iesire
+        if (currentState != STATE_GAME || previewRunning == TRUE || isPaused == TRUE || isInputBlocked == TRUE) break;
 
         int mouseX = LOWORD(lParam);
         int mouseY = HIWORD(lParam);
 
         mouseY -= HEADER_HEIGHT;
 
-        // Aflam pe ce coloana/rand suntem (fara a ne pasa de GAP la calculul indexului)
+        // ... (Calculul coordonatelor ramane neschimbat) ...
         int c = mouseX / (cellSize + GAP);
         int r = mouseY / (cellSize + GAP);
 
-        // Daca indexul calculat este in afara tablei, sau click-ul a fost in GAP (zona maro)
         if (c >= cols || r >= rows) break;
         if (mouseX % (cellSize + GAP) < GAP || mouseY % (cellSize + GAP) < GAP) break;
 
         int idx = r * cols + c;
 
-        // Blocheaza click-ul pe carti deja intoarse sau rezolvate
-        if (state[idx] != 0) break;
+        if (state[idx] != 0) break; // Nu putem da click pe o carte deja intoarsa
 
-        // Logica de joc (restul codului ramane la fel ca inainte)
         if (firstSelection == -1)
         {
+            // Prima carte selectata
             state[idx] = 1;
             firstSelection = idx;
             InvalidateRect(hWnd, NULL, FALSE);
         }
         else
         {
+            // A doua carte selectata
             state[idx] = 1;
             InvalidateRect(hWnd, NULL, FALSE);
-            UpdateWindow(hWnd);
+            UpdateWindow(hWnd); // Fortam desenarea ca sa vedem a doua carte
 
             moves++;
-            char title[100];
-            sprintf(title, "Memory Game");
-            SetWindowText(hWnd, title);
+            // (SetWindowText a fost scos corect anterior)
 
-            // Verificarea potrivirii vizuale (Modulo 4)
             int imgVizuala1 = (board[firstSelection] - 1) % 4;
             int imgVizuala2 = (board[idx] - 1) % 4;
 
             if (imgVizuala1 == imgVizuala2)
             {
-                // ESTE MATCH!
+                // --- POTRIVIRE (MATCH) ---
                 state[firstSelection] = 2;
                 state[idx] = 2;
 
+                // Aici nu blocam input-ul, jucatorul poate continua rapid
+                // Poti lasa Sleep(100) pentru un mic efect vizual sau il poti scoate
                 Sleep(100);
 
                 int finished = 1;
@@ -883,16 +897,20 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                     currentState = STATE_MENU;
                     UpdateUI(hWnd);
                 }
-
             }
             else
             {
-                // NU SE POTRIVESC
-                Sleep(500);
-                state[firstSelection] = 0;
-                state[idx] = 0;
-                InvalidateRect(hWnd, NULL, FALSE);
+                // --- NEPOTRIVIRE (MISMATCH) - MODIFICAT ---
+
+                // 1. Blocam orice alt click
+                isInputBlocked = TRUE;
+
+                // 2. Pornim timer-ul care va ascunde cartile peste 0.5 secunde (500ms)
+                // Nota: NU le facem state=0 aici, le lasam 1 ca sa fie vizibile cat timp asteptam
+                SetTimer(hWnd, TIMER_MISMATCH_ID, 500, NULL);
             }
+
+            // Resetam selectia (Timer-ul se va ocupa de curatarea vizuala daca e nevoie)
             firstSelection = -1;
         }
     }
