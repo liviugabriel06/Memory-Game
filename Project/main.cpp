@@ -126,24 +126,37 @@ typedef struct
 */
 void SaveScore()
 {
-    // 1. Citeste numele din caseta de editare.
+    // 1. Citeste numele (ramane la fel)
     GetWindowText(hEditName, playerName, 50);
-    // Asigura-te ca nu este gol
-    if (strlen(playerName) == 0)
-    {
+    if (strlen(playerName) == 0) {
         strcpy(playerName, "RandomUser");
     }
 
-    // 2. Salveaza in fisier (Adauga numele si dificultatea)
-    FILE *f = fopen("highscore.txt", "a");
-    if (f)
-    {
-        // Format: Nume | Dificultate | Timp | Misari
-        fprintf(f, "%s|%d|%d|%d\n", playerName, cols, gameTime, moves);
-        fclose(f);
+    char buffer[256];
+    sprintf(buffer, "%s|%d|%d|%d\r\n", playerName, cols, gameTime, moves);
+
+    HANDLE hFile = CreateFile(
+        "highscore.txt",
+        FILE_APPEND_DATA,
+        FILE_SHARE_READ,
+        NULL,
+        OPEN_ALWAYS,
+        FILE_ATTRIBUTE_NORMAL,
+        NULL
+    );
+
+    if (hFile != INVALID_HANDLE_VALUE) {
+        DWORD bytesWritten;
+
+        SetFilePointer(hFile, 0, NULL, FILE_END);
+
+        WriteFile(hFile, buffer, strlen(buffer), &bytesWritten, NULL);
+
+        CloseHandle(hFile);
     }
 }
 
+// Functie de comparatie pentru sortare (dupa timp, apoi dupa miscari)
 // Functie de comparatie pentru sortare (dupa timp, apoi dupa miscari)
 int CompareScores(const void *a, const void *b)
 {
@@ -163,35 +176,65 @@ void ShowScores(HWND hWnd)
 {
     ScoreEntry scores[100];
     int count = 0;
-    FILE *f = fopen("highscore.txt", "r");
-    char line[256];
 
-    if (!f)
-    {
+    // 1. Deschidem fisierul pentru CITIRE folosind WinAPI
+    HANDLE hFile = CreateFile(
+        "highscore.txt",
+        GENERIC_READ,
+        FILE_SHARE_READ,
+        NULL,
+        OPEN_EXISTING, // Deschide doar daca exista
+        FILE_ATTRIBUTE_NORMAL,
+        NULL
+    );
+
+    if (hFile == INVALID_HANDLE_VALUE) {
         MessageBox(hWnd, "No high scores saved yet.", "High Scores", MB_OK | MB_ICONINFORMATION);
         return;
     }
 
-    // Citeste scorurile din fisier (Format: Nume|Dificultate|Timp|Misari)
-    while (fgets(line, sizeof(line), f) && count < 100)
-    {
-        // Folosim sscanf pentru a parsa linia
-        if (sscanf(line, "%49[^|]|%d|%d|%d",
-                   scores[count].name,
-                   &scores[count].difficulty,
-                   &scores[count].time,
-                   &scores[count].moves) == 4)
-        {
-            count++;
+    // 2. Citim tot continutul fisierului intr-un buffer
+    DWORD fileSize = GetFileSize(hFile, NULL);
+    if (fileSize > 0 && fileSize != INVALID_FILE_SIZE) {
+        // Alocam memorie dinamic pentru continut (+1 pentru terminatorul null)
+        char *fileContent = (char*)malloc(fileSize + 1);
+
+        if (fileContent) {
+            DWORD bytesRead;
+            // Citim efectiv
+            if (ReadFile(hFile, fileContent, fileSize, &bytesRead, NULL)) {
+                fileContent[bytesRead] = '\0'; // Adaugam terminatorul de sir la final
+
+                // 3. Procesam continutul linie cu linie folosind strtok
+                // Delimitatorii sunt \r (carriage return) si \n (newline)
+                char *line = strtok(fileContent, "\r\n");
+
+                while (line != NULL && count < 100) {
+                    // Parsam linia curenta (Nume|Dificultate|Timp|Miscari)
+                    if (sscanf(line, "%49[^|]|%d|%d|%d",
+                               scores[count].name,
+                               &scores[count].difficulty,
+                               &scores[count].time,
+                               &scores[count].moves) == 4) {
+                        count++;
+                    }
+                    // Trecem la urmatoarea linie
+                    line = strtok(NULL, "\r\n");
+                }
+            }
+            free(fileContent); // Eliberam memoria alocata
         }
     }
-    fclose(f);
 
-    if (count == 0)
-    {
+    // Inchidem handle-ul fisierului (Echivalent cu fclose)
+    CloseHandle(hFile);
+
+    if (count == 0) {
         MessageBox(hWnd, "No valid high scores found.", "High Scores", MB_OK | MB_ICONINFORMATION);
         return;
     }
+
+    // --- DE AICI IN JOS CODUL ESTE IDENTIC CU CEL VECHI ---
 
     // Sorteaza scorurile (folosind functia CompareScores)
     qsort(scores, count, sizeof(ScoreEntry), CompareScores);
@@ -220,7 +263,7 @@ void ShowScores(HWND hWnd)
             strcpy(diff, "HARD");
             topCount = &topHard;
         }
-        else continue;
+        else continue; // Ignora dificultati necunoscute
 
         if (*topCount < 5)
         {
